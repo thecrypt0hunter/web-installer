@@ -63,8 +63,8 @@ function disablePassAuth() {
     echo "* Disabling password authentication. Please wait..."
     # Disable Password Authentication Over SSH
     sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
-    echo "" | tee -a /etc/ssh/sshd_config &>>
-    echo "" | tee -a /etc/ssh/sshd_config &>>
+    echo "" | tee -a /etc/ssh/sshd_config
+    echo "" | tee -a /etc/ssh/sshd_config
     echo "PasswordAuthentication no" | tee -a /etc/ssh/sshd_config 
     # Restart SSH
     ssh-keygen -A
