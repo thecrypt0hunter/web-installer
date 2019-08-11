@@ -17,7 +17,7 @@ function checkRoot {
     fi
 }
 
-function checkOSVersion() {
+function checkOS() {
    echo
    echo "* Checking OS version..."
     if [[ `cat /etc/issue.net`  == ${OS_VER} ]]; then
@@ -65,7 +65,7 @@ function disablePassAuth() {
     sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
     echo "" | tee -a /etc/ssh/sshd_config
     echo "" | tee -a /etc/ssh/sshd_config
-    echo "PasswordAuthentication no" | tee -a /etc/ssh/sshd_config 
+    echo "PasswordAuthentication no" | tee -a /etc/ssh/sshd_config
     # Restart SSH
     ssh-keygen -A
     service ssh restart
@@ -120,8 +120,8 @@ function setupServerKeys() {
     # Create The Server SSH Key
     ssh-keygen -f /home/$USER/.ssh/id_rsa -t rsa -N '' &>> ${SCRIPT_LOGFILE}
     # Copy Github And Bitbucket Public Keys Into Known Hosts File
-    ssh-keyscan -H github.com >> /home/$USER/.ssh/known_hosts
-    ssh-keyscan -H bitbucket.org >> /home/$USER/.ssh/known_hosts 
+    ssh-keyscan -H github.com >> /home/$USER/.ssh/known_hosts &>> ${SCRIPT_LOGFILE}
+    ssh-keyscan -H bitbucket.org >> /home/$USER/.ssh/known_hosts &>> ${SCRIPT_LOGFILE}
     # Setup Site Directory Permissions
     chown -R $USER:$USER /home/$USER &>> ${SCRIPT_LOGFILE}
     chmod -R 755 /home/$USER &>> ${SCRIPT_LOGFILE}
@@ -233,9 +233,13 @@ function installDotNetCore() {
             dpkg -i libssl1.0.0_1.0.2n-1ubuntu6_amd64.deb &>> ${SCRIPT_LOGFILE}
             echo -e "${NONE}${GREEN}* Done${NONE}";
         fi
+        if [[ "${VERSION_ID}" = "9" ]]; then ## Placeholder for Debian
+            echo -e "${NONE}${GREEN}* Done${NONE}";
+        fi
         else
         echo -e "${NONE}${RED}* Version: ${VERSION_ID} not supported.${NONE}";
     fi
+    echo -e "${NONE}${GREEN}* Done${NONE}";
 }
 
 function installNginx() {
@@ -267,7 +271,7 @@ EOF
     cat > /etc/nginx/sites-available/${DNS_NAME} << EOF
 server {
     listen 80;
-    DNS_NAME ${DNS_NAME};
+    server_name ${DNS_NAME};
     root /home/${USER}/${DNS_NAME}/;
     index index.html index.htm;
     charset utf-8;
@@ -361,22 +365,26 @@ function installWebSite() {
 function displayInfo() {
     # Display information
     echo
-    echo "Website URL:     "${DNS_NAME}
+    echo "${UNDERLINE}Important information${NONE}"
+    echo
+    echo "Website URL: "${DNS_NAME}
     echo "External IP address for DNS: "${SERVER_IP}
     echo "Website location: /home/"${USER}/${DNS_NAME}
-    echo "Sudo Password:   "${SUDO_PASSWORD}
+    echo "Sudo Password: "${SUDO_PASSWORD}
+    echo "Server Blocks: /etc/nginx/sites-enabled/"
 }
 
 # ========================= PLAN ===========================
 
 read -p "What is the domain name for the website? " DNS_NAME
-read -p "Admin email address for SSL Cert" EMAIL
+read -p "Admin email address for SSL Cert? " EMAIL
 read -p "What is the GIT url for your website? " WEBFILE
 read -p "What user name do you want to use? " USER
 read -p "Add your SSH public key here: " PUBLIC_SSH_KEYS
 
 # =================== SOME SETTINGS ========================
 
+OS_VER="Ubuntu*" ## or "Debian*"
 SERVER_IP=$(curl --silent ipinfo.io/ip) ## Grabs the public IP address of the server
 SUDO_PASSWORD=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` ## sets a random password
 SWAP_SIZE="1G" # swap file size create it
@@ -387,7 +395,7 @@ SCRIPT_LOGFILE="/tmp/${USER}_${DATE_STAMP}_output.log"
 # ======================= EXECUTION =======================
 
 checkRoot
-checkOSVersion
+checkOS
 updateOS
 InstallRepos
 disablePassAuth
