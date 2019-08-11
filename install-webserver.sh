@@ -63,9 +63,9 @@ function disablePassAuth() {
     echo "* Disabling password authentication. Please wait..."
     # Disable Password Authentication Over SSH
     sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
-    echo "" | tee -a /etc/ssh/sshd_config
-    echo "" | tee -a /etc/ssh/sshd_config
-    echo "PasswordAuthentication no" | tee -a /etc/ssh/sshd_config
+    echo "" | tee -a /etc/ssh/sshd_config  &>> ${SCRIPT_LOGFILE}
+    echo "" | tee -a /etc/ssh/sshd_config  &>> ${SCRIPT_LOGFILE}
+    echo "PasswordAuthentication no" | tee -a /etc/ssh/sshd_config  &>> ${SCRIPT_LOGFILE}
     # Restart SSH
     ssh-keygen -A
     service ssh restart
@@ -239,7 +239,6 @@ function installDotNetCore() {
         else
         echo -e "${NONE}${RED}* Version: ${VERSION_ID} not supported.${NONE}";
     fi
-    echo -e "${NONE}${GREEN}* Done${NONE}";
 }
 
 function installNginx() {
@@ -365,17 +364,25 @@ function installWebSite() {
 function displayInfo() {
     # Display information
     echo
-    echo "${UNDERLINE}Important information${NONE}"
+    echo "${RED}Important information${NONE}"
     echo
+    echo "Installation logs: "${SCRIPT_LOGFILE}
     echo "Website URL: "${DNS_NAME}
     echo "External IP address for DNS: "${SERVER_IP}
     echo "Website location: /home/"${USER}/${DNS_NAME}
     echo "Sudo Password: "${SUDO_PASSWORD}
     echo "Server Blocks: /etc/nginx/sites-enabled/"
+    echo && echo
+    echo "If you need To register & install your SSL certificate manually run the following command: certbot --nginx --non-interactive --agree-tos --email ${EMAIL} --domains ${DNS_NAME}"
+    echo && echo
 }
 
 # ========================= PLAN ===========================
 
+clear
+echo
+echo "Before you continue ensure that your DNS has an 'A' record for $(curl --silent ipinfo.io/ip)"
+echo
 read -p "What is the domain name for the website? " DNS_NAME
 read -p "Admin email address for SSL Cert? " EMAIL
 read -p "What is the GIT url for your website? " WEBFILE
