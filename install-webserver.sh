@@ -368,29 +368,32 @@ function displayInfo() {
     echo
     echo -e "${UNDERLINE}${BOLD}Important information${NONE}"
     echo
-    echo -e "${BOLD}Installation logs: ${NONE}"${SCRIPT_LOGFILE}
-    echo -e "${BOLD}Website URL: ${NONE}"${DNS_NAME}
-    echo -e "${BOLD}External IP address for DNS: ${NONE}"${SERVER_IP}
-    echo -e "${BOLD}Website location: ${NONE}/home/"${USER}/${DNS_NAME}
-    echo -e "${BOLD}Sudo password for ${USER}: ${NONE}"${SUDO_PASSWORD}
-    echo -e "${BOLD}Server Blocks: ${NONE}/etc/nginx/sites-enabled/"
+    echo -e "${GREEN}Installation logs: ${NONE}"${SCRIPT_LOGFILE}
+    echo -e "${GREEN}Website URL: ${NONE}"${DNS_NAME}
+    echo -e "${GREEN}External IP address for DNS: ${NONE}"${SERVER_IP}
+    echo -e "${GREEN}Website location: ${NONE}/home/"${USER}/${DNS_NAME}
+    echo -e "${GREEN}Sudo password for ${USER}: ${NONE}"${SUDO_PASSWORD}
+    echo -e "${GREEN}Server Blocks: ${NONE}/etc/nginx/sites-enabled/"
     echo && echo
     echo -e "${UNDERLINE}${BOLD}Installation details${NONE}"
-    echo
+    echo -e "${GREEN}"
     nginx -v
-    echo
+    echo -e "${NONE}"
     dotnet --info
-    echo
+    echo -e "${GREEN}"
     sudo -u postgres psql -V
-	echo
+    echo -e "${NONE}"
     if systemctl is-active --quiet redis-server; then echo -e "Redis Service: ${on}"; else echo -e "Redis Service: ${off}"; fi
 	echo
     if systemctl is-active --quiet beanstalkd; then echo -e "Beanstalk Service: ${on}"; else echo -e "Beanstalk Service: ${off}"; fi
-    echo -e "${BOLD}Running a simulation for SSL renewal${NONE}"
+    echo
+    echo -e "${UNDERLINE}${BOLD}Running a simulation for SSL renewal${NONE}"
     echo 
     certbot renew --dry-run
     echo && echo
-    echo "If you need To register & install your SSL certificate manually run the following command: certbot --nginx --non-interactive --agree-tos --email ${EMAIL} --domains ${DNS_NAME}"
+    echo "If the dry run was unsuccessful you may need to register & install your SSL certificate manually by running the following command: "
+    echo
+    echo "certbot --nginx --non-interactive --agree-tos --email ${EMAIL} --domains ${DNS_NAME}"
     echo
 }
 
@@ -399,7 +402,7 @@ function displayInfo() {
 clear
 echo -e "${UNDERLINE}${BOLD}Web Server Installation Guide${NONE}"
 echo
-read -p "Before you continue ensure that your DNS has an 'A' record for $(curl --silent ipinfo.io/ip) - press ank key to continue" response
+read -p "Before you continue ensure that your DNS has an 'A' record for $(curl --silent ipinfo.io/ip) - press any key to continue" response
 echo
 read -p "What is the domain name for the website? " DNS_NAME
 read -p "Admin email address for SSL Cert? " EMAIL
