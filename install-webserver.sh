@@ -366,20 +366,22 @@ function displayInfo() {
 	on="${GREEN}ACTIVE${NONE}"
 	off="${RED}OFFLINE${NONE}"
     echo
-    echo "*** Important information ***"
+    echo -e "${UNDERLINE}${BOLD}Important information${NONE}"
     echo
-    echo "Installation logs: "${SCRIPT_LOGFILE}
-    echo "Website URL: "${DNS_NAME}
-    echo "External IP address for DNS: "${SERVER_IP}
-    echo "Website location: /home/"${USER}/${DNS_NAME}
-    echo "Sudo Password: "${SUDO_PASSWORD}
-    echo "Server Blocks: /etc/nginx/sites-enabled/"
+    echo -e "${BOLD}Installation logs: ${NONE}"${SCRIPT_LOGFILE}
+    echo -e "${BOLD}Website URL: ${NONE}"${DNS_NAME}
+    echo -e "${BOLD}External IP address for DNS: ${NONE}"${SERVER_IP}
+    echo -e "${BOLD}Website location: ${NONE}/home/"${USER}/${DNS_NAME}
+    echo -e "${BOLD}Sudo password for ${USER}: ${NONE}"${SUDO_PASSWORD}
+    echo -e "${BOLD}Server Blocks: ${NONE}/etc/nginx/sites-enabled/"
     echo && echo
-    echo "*** Installation information ***"
+    echo -e "${UNDERLINE}${BOLD}Installation details${NONE}"
     echo
-    echo "Nginx version: " && nginx -v
+    nginx -v
+    echo
     dotnet --info
-    echo "Postgres version: " && sudo -u postgres psql -V
+    echo
+    echo -e "${BOLD}Postgres version:${NONE} " && sudo -u postgres psql -V
 	if systemctl is-active --quiet redis-server; then echo -e "Redis Service: ${on}"; else echo -e "Redis Service: ${off}"; fi
 	if systemctl is-active --quiet beanstalkd; then echo -e "Beanstalk Service: ${on}"; else echo -e "Beanstalk Service: ${off}"; fi
     certbot renew --dry-run
@@ -391,7 +393,7 @@ function displayInfo() {
 # ========================= PLAN ===========================
 
 clear
-echo "*** Web Server Installation ***"
+echo -e "${UNDERLINE}${BOLD}Web Server Installation Guide${NONE}"
 echo
 read -p "Before you continue ensure that your DNS has an 'A' record for $(curl --silent ipinfo.io/ip) - press ank key to continue" response
 echo
@@ -399,8 +401,9 @@ read -p "What is the domain name for the website? " DNS_NAME
 read -p "Admin email address for SSL Cert? " EMAIL
 read -p "What is the GIT url for your website? " WEBFILE
 read -p "What user name do you want to use? " USER
-read -p "Add your SSH public key here: " PUBLIC_SSH_KEYS
-
+echo "Add your SSH public key here: "
+read -p "" PUBLIC_SSH_KEYS
+echo
 # =================== SOME SETTINGS ========================
 
 OS_VER="Ubuntu*" ## or "Debian*"
