@@ -381,9 +381,13 @@ function displayInfo() {
     echo
     dotnet --info
     echo
-    echo -e "${BOLD}Postgres version:${NONE} " && sudo -u postgres psql -V
-	if systemctl is-active --quiet redis-server; then echo -e "Redis Service: ${on}"; else echo -e "Redis Service: ${off}"; fi
-	if systemctl is-active --quiet beanstalkd; then echo -e "Beanstalk Service: ${on}"; else echo -e "Beanstalk Service: ${off}"; fi
+    sudo -u postgres psql -V
+	echo
+    if systemctl is-active --quiet redis-server; then echo -e "Redis Service: ${on}"; else echo -e "Redis Service: ${off}"; fi
+	echo
+    if systemctl is-active --quiet beanstalkd; then echo -e "Beanstalk Service: ${on}"; else echo -e "Beanstalk Service: ${off}"; fi
+    echo -e "${BOLD}Running a simulation for SSL renewal${NONE}"
+    echo 
     certbot renew --dry-run
     echo && echo
     echo "If you need To register & install your SSL certificate manually run the following command: certbot --nginx --non-interactive --agree-tos --email ${EMAIL} --domains ${DNS_NAME}"
