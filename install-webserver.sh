@@ -393,7 +393,7 @@ function displayInfo() {
 clear
 echo "*** Web Server Installation ***"
 echo
-echo "Before you continue ensure that your DNS has an 'A' record for $(curl --silent ipinfo.io/ip) - press ank key to continue" response
+read -p "Before you continue ensure that your DNS has an 'A' record for $(curl --silent ipinfo.io/ip) - press ank key to continue" response
 echo
 read -p "What is the domain name for the website? " DNS_NAME
 read -p "Admin email address for SSL Cert? " EMAIL
