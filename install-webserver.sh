@@ -363,8 +363,10 @@ function installWebSite() {
 
 function displayInfo() {
     # Display information
+	on="${GREEN}ACTIVE${NONE}"
+	off="${RED}OFFLINE${NONE}"
     echo
-    echo "${RED}Important information${NONE}"
+    echo "*** Important information ***"
     echo
     echo "Installation logs: "${SCRIPT_LOGFILE}
     echo "Website URL: "${DNS_NAME}
@@ -373,15 +375,25 @@ function displayInfo() {
     echo "Sudo Password: "${SUDO_PASSWORD}
     echo "Server Blocks: /etc/nginx/sites-enabled/"
     echo && echo
-    echo "If you need To register & install your SSL certificate manually run the following command: certbot --nginx --non-interactive --agree-tos --email ${EMAIL} --domains ${DNS_NAME}"
+    echo "*** Installation information ***"
+    echo
+    echo "Nginx version: " && nginx -v
+    dotnet --info
+    echo "Postgres version: " && sudo -u postgres psql -V
+	if systemctl is-active --quiet redis-server; then echo -e "Redis Service: ${on}"; else echo -e "Redis Service: ${off}"; fi
+	if systemctl is-active --quiet beanstalkd; then echo -e "Beanstalk Service: ${on}"; else echo -e "Beanstalk Service: ${off}"; fi
+    certbot renew --dry-run
     echo && echo
+    echo "If you need To register & install your SSL certificate manually run the following command: certbot --nginx --non-interactive --agree-tos --email ${EMAIL} --domains ${DNS_NAME}"
+    echo
 }
 
 # ========================= PLAN ===========================
 
 clear
+echo "*** Web Server Installation ***"
 echo
-echo "Before you continue ensure that your DNS has an 'A' record for $(curl --silent ipinfo.io/ip)"
+echo "Before you continue ensure that your DNS has an 'A' record for $(curl --silent ipinfo.io/ip) - press ank key to continue" response
 echo
 read -p "What is the domain name for the website? " DNS_NAME
 read -p "Admin email address for SSL Cert? " EMAIL
