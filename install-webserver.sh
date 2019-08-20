@@ -269,18 +269,18 @@ EOF
     ln -s /etc/nginx/sites-available/catch-all /etc/nginx/sites-enabled/catch-all
     cat > /etc/nginx/sites-available/${DNS_NAME} << EOF
 server {
-    listen 80;
+    listen        80;
     server_name ${DNS_NAME};
-    root /home/${USER}/${DNS_NAME}/;
-    index index.html index.htm;
-    charset utf-8;
-    location = /favicon.ico { access_log off; log_not_found off; }
-    location = /robots.txt  { access_log off; log_not_found off; }
-    access_log off;
-    error_log  /var/log/nginx/${DNS_NAME}-error.log error;
-    error_page 404 /index.html;
-    location ~ /\.ht { deny all; }
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ { expires max; log_not_found off; access_log off; }
+    location / {
+        proxy_pass         http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection keep-alive;
+        proxy_set_header   Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
 }
 EOF
     ln -s /etc/nginx/sites-available/${DNS_NAME} /etc/nginx/sites-enabled/${DNS_NAME} &>> ${SCRIPT_LOGFILE}
@@ -347,18 +347,74 @@ function installSSLCert() {
     echo -e "${NONE}${GREEN}* Done${NONE}";
 }
 
-function installWebSite() {
+function compileWebsite() {
     echo
     echo "* Installing your website from ${WEBFILE} into /home/${USER}/${DNS_NAME}. Please wait..."
-    # Install Website
     mkdir /home/${USER}/${DNS_NAME}  &>> ${SCRIPT_LOGFILE}
     cd /home/${USER}/
-    git clone ${WEBFILE} ${DNS_NAME}  &>> ${SCRIPT_LOGFILE}
-    chown ${USER}:www-data /home/${USER}/${DNS_NAME} -R  &>> ${SCRIPT_LOGFILE}
-    chmod g+rw /home/${USER}/${DNS_NAME} -R  &>> ${SCRIPT_LOGFILE}
-    chmod g+s /home/${USER}/${DNS_NAME} -R  &>> ${SCRIPT_LOGFILE}
-    cd /home/${USER}/${DNS_NAME}
+    git clone --recurse-submodules ${WEBFILE} code &>> ${SCRIPT_LOGFILE}  ## --branch=${BRANCH}
+    cd /home/${NODE_USER}/code
+    git submodule update --init --recursive &>> ${SCRIPT_LOGFILE}
+    cd ${GITROOT}
+    dotnet publish -c ${CONF} -r ${ARCH} -v m -o /home/${USER}/${DNS_NAME} &>> ${SCRIPT_LOGFILE} ### compile & publish code
+    rm -rf /home/${NODE_USER}/code &>> ${SCRIPT_LOGFILE} 	                                     ### Remove source
     echo -e "${NONE}${GREEN}* Done${NONE}";
+}
+
+function setupWebService() {
+    echo
+    echo -e "* Setup Website as a service. Please wait..."
+    cd /home/${USER}/
+    cat >/home/${USER}/${DNS_NAME}/run.sh << EOF
+#!/bin/bash
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+cd /home/${USER}/${DNS_NAME}
+dotnet run ${GITROOT}.dll
+EOF
+
+    cat > /etc/systemd/system/${DNS_NAME}.service << EOF
+[Unit]
+Description=${DNS_NAME}
+After=network-online.target
+[Service]
+Type=simple
+User=${USER}
+WorkingDirectory=/home/${USER}/${DNS_NAME}
+ExecStart=/home/${USER}/${DNS_NAME}/run.sh
+Restart=always
+RestartSec=10
+PrivateTmp=true
+TimeoutStopSec=60s
+TimeoutStartSec=5s
+StartLimitInterval=120s
+StartLimitBurst=15
+KillSignal=SIGINT
+SyslogIdentifier=${USER}
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+[Install]
+WantedBy=multi-user.target
+EOF
+    chown -R ${USER}:${USER} /etc/systemd/system/${DNS_NAME}.service &>> ${SCRIPT_LOGFILE}
+    sudo chmod 777 /home/${USER}/${DNS_NAME}/run.sh &>> ${SCRIPT_LOGFILE}
+    sudo systemctl --system daemon-reload &>> ${SCRIPT_LOGFILE}
+    sudo systemctl enable ${DNS_NAME}.service &>> ${SCRIPT_LOGFILE}
+    echo -e "${NONE}${GREEN}* Done${NONE}";
+}
+
+function startWebService() {
+    echo
+    echo -e "* Starting ${DNS_NAME}.service"
+    sudo service ${DNS_NAME}.service start &>> ${SCRIPT_LOGFILE}
+    sleep 2
+    echo -e "${GREEN}* Done${NONE}";
+}
+function stopWebService() {
+    echo
+    echo -e "* Stopping ${DNS_NAME}.service"
+    sudo service ${DNS_NAME}.service stop &>> ${SCRIPT_LOGFILE}
+    sleep 2
+    echo -e "${GREEN}* Done${NONE}";
 }
 
 function displayInfo() {
@@ -383,6 +439,8 @@ function displayInfo() {
     echo -e "${GREEN}"
     sudo -u postgres psql -V
     echo -e "${NONE}"
+    if systemctl is-active --quiet ${DNS_NAME}.service; then echo -e "${DNS_NAME} Service: ${on}"; else echo -e "${DNS_NAME} Service: ${off}"; fi
+    echo
     if systemctl is-active --quiet redis-server; then echo -e "Redis Service: ${on}"; else echo -e "Redis Service: ${off}"; fi
 	echo
     if systemctl is-active --quiet beanstalkd; then echo -e "Beanstalk Service: ${on}"; else echo -e "Beanstalk Service: ${off}"; fi
@@ -407,12 +465,15 @@ echo
 read -p "What is the domain name for the website? " DNS_NAME
 read -p "Admin email address for SSL Cert? " EMAIL
 read -p "What is the GIT url for your website? " WEBFILE
+read -p "What is your web root folder? " GITROOT
 read -p "What user name do you want to use? " USER
 echo "Add your SSH public key here: "
 read -p "" PUBLIC_SSH_KEYS
 echo
 # =================== SOME SETTINGS ========================
 
+ARCH="linux-x64"
+CONF="release"
 OS_VER="Ubuntu*" ## or "Debian*"
 SERVER_IP=$(curl --silent ipinfo.io/ip) ## Grabs the public IP address of the server
 SUDO_PASSWORD=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` ## sets a random password
@@ -443,5 +504,7 @@ installRedis
 installMemcached
 installBeanstalk
 installSSLCert
-installWebSite
+CompileWebSite
+setupWebService
+startWebService
 displayInfo
