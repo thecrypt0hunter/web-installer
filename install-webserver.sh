@@ -504,7 +504,7 @@ installRedis
 installMemcached
 installBeanstalk
 installSSLCert
-CompileWebSite
+compileWebSite
 setupWebService
 startWebService
 displayInfo
