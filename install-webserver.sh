@@ -274,12 +274,12 @@ server {
     location / {
         proxy_pass         http://localhost:5000;
         proxy_http_version 1.1;
-        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Upgrade \$http_upgrade;
         proxy_set_header   Connection keep-alive;
-        proxy_set_header   Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header   X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto \$scheme;
     }
 }
 EOF
@@ -353,11 +353,11 @@ function compileWebsite() {
     mkdir /home/${USER}/${DNS_NAME}  &>> ${SCRIPT_LOGFILE}
     cd /home/${USER}/
     git clone --recurse-submodules ${WEBFILE} code &>> ${SCRIPT_LOGFILE}  ## --branch=${BRANCH}
-    cd /home/${NODE_USER}/code
+    cd /home/${USER}/code
     git submodule update --init --recursive &>> ${SCRIPT_LOGFILE}
     cd ${GITROOT}
     dotnet publish -c ${CONF} -r ${ARCH} -v m -o /home/${USER}/${DNS_NAME} &>> ${SCRIPT_LOGFILE} ### compile & publish code
-    rm -rf /home/${NODE_USER}/code &>> ${SCRIPT_LOGFILE} 	                                     ### Remove source
+    rm -rf /home/${USER}/code &>> ${SCRIPT_LOGFILE} 	                                     ### Remove source
     echo -e "${NONE}${GREEN}* Done${NONE}";
 }
 
@@ -503,8 +503,8 @@ installPostgres
 installRedis
 installMemcached
 installBeanstalk
-installSSLCert
-compileWebSite
+compileWebsite
 setupWebService
 startWebService
+installSSLCert
 displayInfo
