@@ -272,7 +272,7 @@ server {
     listen        80;
     server_name ${DNS_NAME};
     location / {
-        proxy_pass         http://localhost:5000;
+        proxy_pass         http://localhost:${PORT};
         proxy_http_version 1.1;
         proxy_set_header   Upgrade \$http_upgrade;
         proxy_set_header   Connection keep-alive;
@@ -369,10 +369,10 @@ function setupWebService() {
 #!/bin/bash
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 cd /home/${USER}/${DNS_NAME}
-dotnet run ${GITROOT}.dll
+dotnet ${APP_NAME}.dll
 EOF
 
-    cat > /etc/systemd/system/${DNS_NAME}.service << EOF
+    cat > /etc/systemd/system/${APP_NAME}.service << EOF
 [Unit]
 Description=${DNS_NAME}
 After=network-online.target
@@ -395,10 +395,10 @@ Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
 [Install]
 WantedBy=multi-user.target
 EOF
-    chown -R ${USER}:${USER} /etc/systemd/system/${DNS_NAME}.service &>> ${SCRIPT_LOGFILE}
+    chown -R ${USER}:${USER} /etc/systemd/system/${APP_NAME}.service &>> ${SCRIPT_LOGFILE}
     sudo chmod 777 /home/${USER}/${DNS_NAME}/run.sh &>> ${SCRIPT_LOGFILE}
     sudo systemctl --system daemon-reload &>> ${SCRIPT_LOGFILE}
-    sudo systemctl enable ${DNS_NAME}.service &>> ${SCRIPT_LOGFILE}
+    sudo systemctl enable ${APP_NAME}.service &>> ${SCRIPT_LOGFILE}
     echo -e "${NONE}${GREEN}* Done${NONE}";
 }
 
@@ -465,7 +465,10 @@ echo
 read -p "What is the domain name for the website? " DNS_NAME
 read -p "Admin email address for SSL Cert? " EMAIL
 read -p "What is the GIT url for your website? " WEBFILE
+read -p "What port is your .Net application designed to work on (default=5000)" PORT
+if [${PORT} = ""]; then PORT="5000"; fi
 read -p "What is your web root folder? " GITROOT
+read -p "What is the name of your .Net application?" APP_NAME
 read -p "What user name do you want to use? " USER
 echo "Add your SSH public key here: "
 read -p "" PUBLIC_SSH_KEYS
