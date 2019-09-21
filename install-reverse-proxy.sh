@@ -165,7 +165,7 @@ server {
     server_name ${DNS_NAME};
 
     location / {
-        proxy_pass                          http://DESTINATION_IP;
+        proxy_pass                          http://${DESTINATION_IP};
         proxy_http_version                  1.1;
         proxy_set_header Upgrade            \$http_upgrade;
         proxy_set_header                    Connection keep-alive;
