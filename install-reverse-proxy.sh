@@ -20,12 +20,16 @@ function checkRoot {
 function checkOS() {
    echo
    echo "* Checking OS version..."
-    if [[ `cat /etc/issue.net`  == ${OS_VER} ]]; then
+    if [[ `cat /etc/issue.net`  == ${OS_VER1} ]]; then
         echo -e "${GREEN}* You are running `cat /etc/issue.net` . Setup will continue.${NONE}";
     else
-        echo -e "${RED}* You are not running ${OS_VER}. You are running `cat /etc/issue.net` ${NONE}";
-        echo && echo "Installation cancelled" && echo;
-        exit;
+        if [[ `cat /etc/issue.net`  == ${OS_VER2} ]]; then
+           echo -e "${GREEN}* You are running `cat /etc/issue.net` . Setup will continue.${NONE}";
+        else
+           echo -e "${RED}* You are not running ${OS_VER1} or ${OS_VER2}. You are running `cat /etc/issue.net` ${NONE}";
+           echo && echo "Installation cancelled" && echo;
+           exit;
+        fi
     fi
 }
 
@@ -230,7 +234,8 @@ function displayInfo() {
 
 # =================== SOME SETTINGS ========================
 
-OS_VER="Debian*" ## or "Ubuntu*"
+OS_VER1="Debian*" 
+OS_VER2="Ubuntu*"
 SERVER_IP=$(curl --silent ipinfo.io/ip) ## Grabs the public IP address of the server
 SWAP_SIZE="1G" # swap file size create it
 DATE_STAMP="$(date +%y-%m-%d-%s)"
